@@ -1,7 +1,7 @@
 # PIC16F877A ELECTRONIC DICE GAME 🎲
 
 This project implements a **two-player electronic dice game** using the **PIC16F877A microcontroller**, a 16x2 LCD, LEDs, and push buttons.  
-The entire circuit is simulated in **Proteus 8 Professional**, and the firmware is written in **CCS C**. :contentReference[oaicite:0]{index=0}
+The entire circuit is simulated in **Proteus 8 Professional**
 
 Each player rolls the dice three times, and after all rounds are completed, the player with the highest total score wins. The LCD guides the user through the entire gameplay.
 
