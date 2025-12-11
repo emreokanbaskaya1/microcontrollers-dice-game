@@ -7,6 +7,14 @@ Each player rolls the dice three times, and after all rounds are completed, the 
 
 ---
 
+
+# SCHEME
+
+<img width="1627" height="1062" alt="image" src="https://github.com/user-attachments/assets/b595c1ab-2f6a-479c-bf37-294c0f78184f" />
+
+
+
+---
 # GAME FLOW
 
 1. When powered on, the LCD displays:
