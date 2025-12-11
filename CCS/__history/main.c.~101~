@@ -1,0 +1,139 @@
+#include <16F877A.h>
+#fuses XT, NOWDT, NOPROTECT, NOBROWNOUT, NOLVP, NOPUT, NOWRT, NODEBUG, NOCPD
+#use delay(clock=4M)
+#include <lcd.c>
+
+// Durumlarý belirleyen global deðiþkenler
+int oyun_durumu = 0;  // 0: Baþlangýç, 1: Zar 1 atýldý, 2: Zar 2 atýldý ve sonuç bekleniyor
+int zar1 = 0;  // Ýlk zarýn sonucu
+int zar2 = 0;  // Ýkinci zarýn sonucu
+
+// Timer0'ý kullanarak 1 ile 6 arasýnda rastgele zar sayýsý üretmek için fonksiyon
+int zar_atisi() {
+    int timer_value = get_timer0();  // Timer0'ýn o anki deðerini al
+    set_timer0(0);  // Timer0'ý sýfýrla
+    return (timer_value % 6) + 1;  // 1 ile 6 arasýnda rastgele sayý üret
+}
+
+void zar_sonucunu_goster(int zar, int zar_numarasi) {
+    lcd_putc("\f");  // LCD'yi temizle
+    lcd_gotoxy(1, 1);
+    printf(lcd_putc, "Zar %d: %d", zar_numarasi, zar);  // Zar sonucunu ekrana yazdýr
+}
+
+void baslama_mesaji() {
+    lcd_putc("\f");
+    lcd_gotoxy(1, 1);
+    printf(lcd_putc, "Oyuna baslamak");
+    lcd_gotoxy(1, 2);
+    printf(lcd_putc, "icin START'a basin");
+}
+
+void hosgeldiniz_mesaji() {
+    // "Hoþgeldiniz!" yazýsýný saða doðru kaydýrarak ekrandan çýkarmak
+    for (int i = 1; i <= 16; i++) {
+        lcd_putc("\f");  // LCD'yi temizle
+        lcd_gotoxy(i, 1);
+        printf(lcd_putc, "Hosgeldiniz!");
+        delay_ms(50);  // Kayma efekti için bekleme süresi (50 ms)
+    }
+}
+
+void kazanan_mesaji() {
+    lcd_putc("\f");
+
+    if (zar1 > zar2) {
+        lcd_gotoxy(1, 1);
+        printf(lcd_putc, "Zar 1 kazandi!");
+    } else if (zar2 > zar1) {
+        lcd_gotoxy(1, 1);
+        printf(lcd_putc, "Zar 2 kazandi!");
+    } else {
+        lcd_gotoxy(1, 1);
+        printf(lcd_putc, "Berabere!");
+    }
+    delay_ms(3000);  // Kazanan mesajý 3 saniye gösterilsin
+}
+
+// Butona basýlana kadar bekle
+void buton_bekle(int pin) {
+    while(input(pin) == 0);  // Butonun basýlmasýný bekle
+    delay_ms(300);  // Debouncing için gecikme
+}
+
+void main() {
+    // LCD'yi baþlat
+    lcd_init();
+
+    // RA0 pinini giriþ olarak ayarla (START butonu)
+    set_tris_a(0x01);  // RA0 giriþ olarak ayarlandý (00000001)
+
+    // RC0 ve RC1 pinlerini giriþ olarak ayarla (OYUNU ÇALIÞTIR ve Reset butonlarý)
+    set_tris_c(0x03);  // RC0 ve RC1 giriþ olarak ayarlandý (00000011)
+
+    // Timer0'ý baþlat
+    setup_timer_0(RTCC_INTERNAL | RTCC_DIV_256);  // Timer0 iç kaynakla baþlatýldý (prescaler = 256)
+
+    // Baþlangýçta sadece "Lütfen Oyunu Çalýþtýr'a basýn" mesajýný göster
+    lcd_putc("\f");
+    lcd_gotoxy(1, 1);
+    printf(lcd_putc, "Lutfen Oyunu");
+    lcd_gotoxy(1, 2);
+    printf(lcd_putc, "Calistir'a basin");
+
+    while(TRUE) {
+        // RESET butonuna basýldýðýnda oyunu sýfýrla
+        if (input(PIN_C1) == 1) {
+            oyun_durumu = 0;  // Oyunu baþtan baþlat
+            delay_ms(50);  // Buton sýçramalarýný önlemek için kýsa gecikme
+            lcd_putc("\f");  // LCD'yi temizle ve baþlangýç mesajýný tekrar göster
+            lcd_gotoxy(1, 1);
+            printf(lcd_putc, "Lutfen Oyunu");
+            lcd_gotoxy(1, 2);
+            printf(lcd_putc, "Calistir'a basin");
+            continue;  // Döngünün baþýna geri dön
+        }
+
+        // OYUNU ÇALIÞTIR BUTONU'na basýldýðýnda (oyun_durumu == 0 ise)
+        if (oyun_durumu == 0 && input(PIN_C0)) {
+            buton_bekle(PIN_C0);  // OYUNU ÇALIÞTIR butonunun basýlmasýný bekle
+
+            // "Hoþgeldiniz" mesajý kaydýrýlýr
+            hosgeldiniz_mesaji();
+            delay_ms(500);  // Hoþgeldiniz mesajý ile baþlama mesajý arasýnda 500 ms bekleme
+
+            // "Oyuna baþlamak için START'a basýn" mesajýný göster
+            baslama_mesaji();
+            oyun_durumu = 1;  // Oyun baþlama aþamasýna geçildi
+        }
+
+        // START butonuna basýldýðýnda oyun baþlasýn
+        if (oyun_durumu == 1 && input(PIN_A0)) {
+            buton_bekle(PIN_A0);  // START butonunun basýlmasýný bekle
+
+            // Ýlk basýþta zar 1 atýlsýn
+            zar1 = zar_atisi();
+            zar_sonucunu_goster(zar1, 1);  // Zar 1 sonucunu göster
+            oyun_durumu = 2;  // Zar 1 atýldý
+        }
+
+        // Ýkinci basýþta zar 2 atýlsýn ve kazanan belirlensin
+        if (oyun_durumu == 2 && input(PIN_A0)) {
+            buton_bekle(PIN_A0);  // Ýkinci basýþta zar 2 atýlacak
+            zar2 = zar_atisi();
+            zar_sonucunu_goster(zar2, 2);  // Zar 2 sonucunu göster
+            delay_ms(1000);  // Biraz bekleyelim
+            kazanan_mesaji();  // Zarlarý karþýlaþtýr ve sonucu göster
+
+            // Oyunu tekrar baþlatmak için durum sýfýrlanýr
+            oyun_durumu = -1;  // Oyun bitti, tekrar baþlangýç için sýfýrlama yapýlýr
+        }
+
+        // Oyuna tekrar baþlamak için START'a basýlmasýný bekle
+        if (oyun_durumu == -1) {
+            baslama_mesaji();  // Tekrar baþlatmak için mesaj göster
+            oyun_durumu = 0;  // Tekrar baþlatýlacak oyun için durum sýfýrlandý
+        }
+    }
+}
+

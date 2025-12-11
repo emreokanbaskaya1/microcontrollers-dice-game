@@ -1,0 +1,91 @@
+
+ROM used:   1169/8192 (14%)
+            1169/8192 (14%) including unused fragments
+
+            1.2 Average locations per line
+            7.3 Average locations per statement
+
+RAM used:   18/368 (5%) at main() level
+            31/368 (8%) worst case
+
+Stack used: 0 worst case (0 in main + 0 for interrupts)
+Stack size: 8
+
+Lines Stmts  %   Files
+----- ----- ---  -----
+  150    92  58  main.c
+  661     0   0  ..\..\..\..\..\..\..\Program Files (x86)\PICC\Devices\16F877A.h
+  162    68  42  ..\..\..\..\..\..\..\Program Files (x86)\PICC\Drivers\lcd420.c
+----- -----
+  973   160 Total
+
+Page ROM  %  RAM   Vol Diff  Functions:
+---- --- --- ---   --- ----  ----------
+0     21   2    1             @delay_ms1
+0      8   1    0             @const626
+ Inline         3   463  4.3  lcd_read_byte
+0     12   1    1   134  2.2  lcd_send_nibble
+0     58   5    3   317  4.3  lcd_send_byte
+0     44   4    2   422  4.7  lcd_init
+0     26   2    3   321  5.5  lcd_gotoxy
+0      8   1    0             @goto10605
+0     39   3    1   308  5.0  lcd_putc
+0     15   1    2    92  2.9  zar_atisi
+0     21   2    3             @DIV88
+0     42   4    1   147  3.5  led_efekti
+0     32   3    6   165  3.3  @WRITEBITA
+0     32   3    0   171  3.4  hosgeldiniz_mesaji
+0      1   0    0   171  3.4  @const673
+0     75   6    4   681  6.5  @PSTRINGC7_649
+0      7   1    0    90  1.5  @const675
+0     79   7    0   275  2.2  guncelle_lcd
+0      1   0    0   275  2.2  @const677
+0      7   1    0    89  3.3  @const678
+0     84   7    5    88  3.2  @PSTRINGCN7_649
+0     87   7    6   394  3.2  @PRINTF_D_649
+0      7   1    0   154  1.7  @const684
+0    100   9    1   394  3.2  kazanan_mesaji
+0      1   0    0   386  3.2  @const686
+0      8   1    0   132  1.6  @const687
+0      1   0    0             @const688
+0      6   1    0   386  3.2  @const689
+0      6   1    0  2190  8.3  @const690
+0      5   0    0    90  1.5  @const691
+0     23   2    2   192  3.6  reset_oyun
+0    251  21    2  1584  5.8  MAIN
+0      1   0    0  1099  5.8  @const698
+0      8   1    0             @const699
+0      8   1    0             @const700
+0      1   0    0  1267  5.8  @const701
+0      8   1    0  1041  6.8  @const702
+0      1   0    0             @const703
+0      8   1    0             @const704
+0      1   0    0             @const705
+0      8   1    0             @const706
+0      1   0    0             @const707
+0      6   1    0             @const708
+0      7   1    0             @const709
+ Inline         0             @cinit1
+
+Program metrics:
+    Functions               30
+    Statements              160
+    Comments                180
+    Volume (V)              23798
+    Difficulty (D)          116.0
+    Effort to implement (E) 2760505
+    Time to implement (T)   42 hours, 36 minutes
+    Est Delivered Bugs (B)  7
+    Cyclomatic Complexity   40
+    Maintainability (MI)    78
+
+ Segment     Used  Free
+-----------  ----  ----
+00000-00003     4  0  
+00004-007FF  1165  879  
+00800-00FFF     0  2048  
+01000-017FF     0  2048  
+01800-01FFF     0  2048  
+
+
+

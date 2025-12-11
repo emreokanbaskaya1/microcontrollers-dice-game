@@ -1,0 +1,120 @@
+#include <16F877A.h>
+#fuses XT, NOWDT, NOPROTECT, NOBROWNOUT, NOLVP, NOPUT, NOWRT, NODEBUG, NOCPD
+#use delay(clock=4M)
+#include <lcd420.c>
+
+// LCD Pin Tanýmlarý
+#define LCD_RS_PIN PIN_B1
+#define LCD_RW_PIN PIN_B2
+#define LCD_E_PIN  PIN_B0
+#define LCD_D4_PIN PIN_B4
+#define LCD_D5_PIN PIN_B5
+#define LCD_D6_PIN PIN_B6
+#define LCD_D7_PIN PIN_B7
+
+// Global deðiþkenler
+int oyun_durumu = 0;  // 0: Baþlangýç, 1: Oyuncu 1, 2: Oyuncu 2
+int oyuncu1_zarlar[3];  
+int oyuncu2_zarlar[3];
+int oyuncu1_toplam = 0; 
+int oyuncu2_toplam = 0;
+int zar_sayisi = 0;
+
+// Rastgele zar atma fonksiyonu
+int zar_atisi() {
+    int timer_value = get_timer0();
+    set_timer0(0);
+    return (timer_value % 6) + 1;  // 1-6 arasý sayý
+}
+
+void baslama_mesaji() {
+    lcd_putc("\f");
+    lcd_gotoxy(1, 1);
+    printf(lcd_putc, "Oyuna baslamak");
+    lcd_gotoxy(1, 2);
+    printf(lcd_putc, "icin START'a basin");
+}
+
+void hosgeldiniz_mesaji() {
+    lcd_putc("\f");
+    lcd_gotoxy(5, 1);
+    printf(lcd_putc, "Hosgeldiniz!");
+    delay_ms(500);
+}
+
+// LED iþlevleri (RD portu)
+void tum_ledleri_yak() {
+    for (int j = 0; j < 8; j++) output_high(PIN_D0 + j);
+}
+void tum_ledleri_sondur() {
+    for (int j = 0; j < 8; j++) output_low(PIN_D0 + j);
+}
+
+// Zarlarý gösteren ve toplamý hesaplayan fonksiyon
+void guncelle_lcd() {
+    lcd_putc("\f");
+    lcd_gotoxy(1, 1);
+    printf(lcd_putc, "Oyuncu 1: %d", oyuncu1_toplam);
+    lcd_gotoxy(1, 2);
+    printf(lcd_putc, "Oyuncu 2: %d", oyuncu2_toplam);
+}
+
+void main() {
+    lcd_init();
+    set_tris_a(0x01);  // RA0 giriþ
+    set_tris_c(0x03);  // RC0 ve RC1 giriþ
+    set_tris_d(0x00);  // RD0-RD7 çýkýþ
+    setup_timer_0(RTCC_INTERNAL | RTCC_DIV_256);
+    tum_ledleri_sondur();
+
+    baslama_mesaji();
+
+    while (TRUE) {
+        if (oyun_durumu == 0 && input(PIN_C0)) {  // START butonu
+            delay_ms(200);
+            hosgeldiniz_mesaji();
+            baslama_mesaji();
+            oyun_durumu = 1;
+        }
+
+        if (oyun_durumu == 1 && input(PIN_A0)) {  // Oyuncu 1 zar atýyor
+            delay_ms(200);
+            oyuncu1_zarlar[zar_sayisi] = zar_atisi();
+            oyuncu1_toplam += oyuncu1_zarlar[zar_sayisi];
+            guncelle_lcd();
+            oyun_durumu = 2;
+        }
+
+        if (oyun_durumu == 2 && input(PIN_A0)) {  // Oyuncu 2 zar atýyor
+            delay_ms(200);
+            oyuncu2_zarlar[zar_sayisi] = zar_atisi();
+            oyuncu2_toplam += oyuncu2_zarlar[zar_sayisi];
+            guncelle_lcd();
+            zar_sayisi++;
+
+            if (zar_sayisi >= 3) {
+                lcd_putc("\f");
+                lcd_gotoxy(1, 1);
+                if (oyuncu1_toplam > oyuncu2_toplam) {
+                    printf(lcd_putc, "Oyuncu 1 Kazandi!");
+                } else if (oyuncu2_toplam > oyuncu1_toplam) {
+                    printf(lcd_putc, "Oyuncu 2 Kazandi!");
+                } else {
+                    printf(lcd_putc, "Berabere!");
+                }
+                tum_ledleri_yak();
+                delay_ms(2000);
+                tum_ledleri_sondur();
+
+                // Oyunu resetle
+                oyun_durumu = 0;
+                zar_sayisi = 0;
+                oyuncu1_toplam = 0;
+                oyuncu2_toplam = 0;
+            } else {
+                oyun_durumu = 1;  // Sýradaki atýþ
+            }
+        }
+    }
+}
+

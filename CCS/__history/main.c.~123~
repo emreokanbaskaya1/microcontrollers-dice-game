@@ -1,0 +1,95 @@
+#include <16F877A.h>
+#fuses XT, NOWDT, NOPROTECT, NOBROWNOUT, NOLVP, NOPUT, NOWRT, NODEBUG, NOCPD
+#use delay(clock=4M)
+#include <lcd420.c>
+
+// LCD Pin Tanýmlarý
+#define LCD_RS_PIN PIN_B1
+#define LCD_RW_PIN PIN_B2
+#define LCD_E_PIN  PIN_B0
+#define LCD_D4_PIN PIN_B4
+#define LCD_D5_PIN PIN_B5
+#define LCD_D6_PIN PIN_B6
+#define LCD_D7_PIN PIN_B7
+
+// Global deðiþkenler
+int oyun_durumu = 0;
+int oyuncu1_zarlar[3], oyuncu2_zarlar[3];
+int oyuncu1_toplam = 0, oyuncu2_toplam = 0;
+int zar_sayisi = 0, i = 0;
+
+void buton_bekle(int pin) {
+    while (input(pin) == 0);  // Butona basýlana kadar bekle
+    delay_ms(200);            // 200 ms gecikme
+}
+
+void hosgeldiniz_mesaji() {
+    for (i = 1; i <= 17; i++) {
+        lcd_putc("\f");
+        lcd_gotoxy(i, 1);
+        printf(lcd_putc, "Hosgeldiniz!");
+        delay_ms(30);
+    }
+}
+
+void baslama_mesaji() {
+    lcd_putc("\f");
+    lcd_gotoxy(1, 1);
+    printf(lcd_putc, "Oyuna baslamak");
+    lcd_gotoxy(1, 2);
+    printf(lcd_putc, "icin START'a basin");
+}
+
+void tum_ledleri_yak() {
+    for (i = 0; i < 8; i++) {
+        output_high(PIN_D0 + i);
+    }
+}
+
+void tum_ledleri_sondur() {
+    for (i = 0; i < 8; i++) {
+        output_low(PIN_D0 + i);
+    }
+}
+
+void main() {
+    lcd_init();
+    set_tris_a(0x01);  // RA0 giriþ
+    set_tris_c(0x03);  // RC0 ve RC1 giriþ
+    set_tris_d(0x00);  // RD0-RD7 LED çýkýþ
+    set_tris_b(0x00);  // RB0-RB7 LCD çýkýþ
+    setup_timer_0(RTCC_INTERNAL | RTCC_DIV_256);
+
+    lcd_putc("\f");
+    lcd_gotoxy(1, 1);
+    printf(lcd_putc, "Lutfen Oyunu");
+    lcd_gotoxy(1, 2);
+    printf(lcd_putc, "Calistir'a basin");
+
+    tum_ledleri_sondur();
+
+    while (TRUE) {
+        if (input(PIN_C1) == 1) {  // RESET butonu
+            oyun_durumu = 0;
+            zar_sayisi = oyuncu1_toplam = oyuncu2_toplam = 0;
+            lcd_putc("\f");
+            lcd_gotoxy(1, 1);
+            printf(lcd_putc, "Lutfen Oyunu");
+            lcd_gotoxy(1, 2);
+            printf(lcd_putc, "Calistir'a basin");
+            tum_ledleri_sondur();
+            continue;
+        }
+
+        if (oyun_durumu == 0 && input(PIN_C0)) {  // Baþlatma butonu
+            buton_bekle(PIN_C0);
+            hosgeldiniz_mesaji();
+            baslama_mesaji();
+            tum_ledleri_yak();
+            delay_ms(500);
+            tum_ledleri_sondur();
+            oyun_durumu = 1;
+        }
+    }
+}
+

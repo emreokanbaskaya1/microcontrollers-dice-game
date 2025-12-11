@@ -1,0 +1,87 @@
+#include <16F877A.h>
+#fuses XT, NOWDT, NOPROTECT, NOBROWNOUT, NOLVP, NOPUT, NOWRT, NODEBUG, NOCPD
+#use delay(clock=4M)
+#include <lcd.c>
+#include <stdlib.h>  // rand() ve srand() için gerekli
+
+// Durumlarý belirleyen global deðiþkenler
+int oyun_durumu = 0;  // 0: Baþlangýç, 1: Zar 1 atýldý, 2: Zar 2 atýldý ve sonuç bekleniyor
+int zar1 = 0;  // Ýlk zarýn sonucu
+int zar2 = 0;  // Ýkinci zarýn sonucu
+
+// Rastgele zar sayýsýný üretmek için fonksiyon (1-6 arasýnda)
+int zar_atisi() {
+    return (rand() % 6) + 1;  // 1 ile 6 arasýnda rastgele sayý üret
+}
+
+void zar_sonucunu_goster(int zar, int zar_numarasi) {
+    lcd_putc("\f");  // LCD'yi temizle
+    lcd_gotoxy(1, 1);
+    printf(lcd_putc, "Zar %d: %d", zar_numarasi, zar);  // Zar sonucunu ekrana yazdýr
+}
+
+void baslama_mesaji() {
+    lcd_putc("\f");
+    lcd_gotoxy(1, 1);
+    printf(lcd_putc, "Oyuna baslamak");
+    lcd_gotoxy(1, 2);
+    printf(lcd_putc, "icin START'a basin");
+}
+
+void kazanan_mesaji() {
+    lcd_putc("\f");
+
+    if (zar1 > zar2) {
+        lcd_gotoxy(1, 1);
+        printf(lcd_putc, "Zar 1 kazandi!");
+    } else if (zar2 > zar1) {
+        lcd_gotoxy(1, 1);
+        printf(lcd_putc, "Zar 2 kazandi!");
+    } else {
+        lcd_gotoxy(1, 1);
+        printf(lcd_putc, "Berabere!");
+    }
+    delay_ms(2000);
+}
+
+// Butona basýlana kadar bekle
+void buton_bekle(int pin) {
+    while(input(pin) == 0);  // Butonun basýlmasýný bekle
+    delay_ms(300);  // Debouncing için gecikme
+}
+
+void main() {
+    // LCD'yi baþlat
+    lcd_init();
+
+    // RA0 pinini giriþ olarak ayarla (START butonu)
+    set_tris_a(0x01);  // RA0 giriþ olarak ayarlandý (00000001)
+
+    // Timer0'ý rastgelelik için seed olarak kullan
+    srand(get_timer0());
+
+    // Baþlangýçta sadece boþ ekran ya da bir sabit mesaj göster
+    baslama_mesaji();
+
+    while(TRUE) {
+        // START butonuna basýldýðýnda
+        buton_bekle(PIN_A0);  // START butonunun basýlmasýný bekle
+
+        if (oyun_durumu == 0) {
+            // Ýlk basýþta zar 1 atýlsýn
+            zar1 = zar_atisi();
+            zar_sonucunu_goster(zar1, 1);  // Zar 1 sonucunu göster
+            oyun_durumu = 1;  // Zar 1 atýldý
+        } 
+        else if (oyun_durumu == 1) {
+            // Ýkinci basýþta zar 2 atýlsýn
+            zar2 = zar_atisi();
+            zar_sonucunu_goster(zar2, 2);  // Zar 2 sonucunu göster
+            delay_ms(1000);  // Biraz bekleyelim
+            kazanan_mesaji();  // Zarlarý karþýlaþtýr ve sonucu göster
+            oyun_durumu = 0;  // Oyun tekrar baþa dönsün
+            baslama_mesaji();  // Tekrar baþlatmak için mesaj göster
+        }
+    }
+}
+

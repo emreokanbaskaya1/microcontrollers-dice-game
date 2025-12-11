@@ -1,0 +1,144 @@
+#include <16F877A.h>
+#fuses XT, NOWDT, NOPROTECT, NOBROWNOUT, NOLVP, NOPUT, NOWRT, NODEBUG, NOCPD
+#use delay(clock=4M)
+#include <lcd420.c>
+
+// LCD Pin Tanýmlarý
+#define LCD_RS_PIN PIN_B1
+#define LCD_RW_PIN PIN_B2
+#define LCD_E_PIN  PIN_B0
+#define LCD_D4_PIN PIN_B4
+#define LCD_D5_PIN PIN_B5
+#define LCD_D6_PIN PIN_B6
+#define LCD_D7_PIN PIN_B7
+
+// Global deðiþkenler
+int oyun_durumu = 0;   // 0: Baþlangýç, 1: Oyuncu 1 Atýþ, 2: Oyuncu 2 Atýþ
+int oyuncu1_zarlar[3]; 
+int oyuncu2_zarlar[3];
+int oyuncu1_toplam = 0; 
+int oyuncu2_toplam = 0;
+int zar_sayisi = 0;     // Zar sayacý
+
+// Timer0 ile 1-6 arasý rastgele zar atýþý
+int zar_atisi() {
+    int timer_value = get_timer0();
+    set_timer0(0);
+    return (timer_value % 6) + 1;
+}
+
+// Hoþgeldiniz mesajý kayarak yazdýrma
+void hosgeldiniz_mesaji() {
+    int pos;
+    for (pos = 17; pos > 0; pos--) {
+        lcd_putc("\f");
+        lcd_gotoxy(pos, 1);
+        printf(lcd_putc, "Hosgeldiniz!");
+        delay_ms(200);
+    }
+}
+
+// Zar sonuçlarýný güncelle ve ekrana yaz
+void guncelle_lcd() {
+    lcd_putc("\f");
+    lcd_gotoxy(1, 1);
+    printf(lcd_putc, "P1: %d+%d+%d", oyuncu1_zarlar[0], oyuncu1_zarlar[1], oyuncu1_zarlar[2]);
+    lcd_gotoxy(1, 2);
+    printf(lcd_putc, "P2: %d+%d+%d", oyuncu2_zarlar[0], oyuncu2_zarlar[1], oyuncu2_zarlar[2]);
+}
+
+void kazanan_mesaji() {
+    lcd_putc("\f");
+    lcd_gotoxy(1, 1);
+    printf(lcd_putc, "P1: %d  P2: %d", oyuncu1_toplam, oyuncu2_toplam);
+    delay_ms(1000);
+    lcd_putc("\f");
+    lcd_gotoxy(1, 1);
+    if (oyuncu1_toplam > oyuncu2_toplam) {
+        printf(lcd_putc, "Oyuncu 1 Kazandi!");
+    } else if (oyuncu2_toplam > oyuncu1_toplam) {
+        printf(lcd_putc, "Oyuncu 2 Kazandi!");
+    } else {
+        printf(lcd_putc, "Berabere!");
+    }
+    delay_ms(3000);
+}
+
+void main() {
+    lcd_init();
+    set_tris_a(0x01);  // RA0 giriþ (START butonu)
+    set_tris_c(0x03);  // RC0 (CALISTIR), RC1 (RESET)
+    set_tris_d(0x00);  // RD portu LED çýkýþlarý
+    setup_timer_0(RTCC_INTERNAL | RTCC_DIV_256);
+
+    while (TRUE) {
+        // RESET Tuþu: Oyunu sýfýrla
+        if (input(PIN_C1)) {
+            oyun_durumu = 0;
+            zar_sayisi = 0;
+            oyuncu1_toplam = 0;
+            oyuncu2_toplam = 0;
+            for (int i = 0; i < 3; i++) {
+                oyuncu1_zarlar[i] = 0;
+                oyuncu2_zarlar[i] = 0;
+            }
+            lcd_putc("\f");
+            lcd_gotoxy(1, 1);
+            printf(lcd_putc, "Oyun Resetlendi!");
+            delay_ms(1500);
+            continue;
+        }
+
+        // Baþlangýç mesajý
+        if (oyun_durumu == 0) {
+            lcd_putc("\f");
+            lcd_gotoxy(1, 1);
+            printf(lcd_putc, "Lutfen CALISTIR");
+            lcd_gotoxy(1, 2);
+            printf(lcd_putc, "butonuna basin");
+            if (input(PIN_C0)) {  // CALISTIR Butonu
+                delay_ms(200);
+                hosgeldiniz_mesaji();
+                lcd_putc("\f");
+                lcd_gotoxy(1, 1);
+                printf(lcd_putc, "START butonuna");
+                lcd_gotoxy(1, 2);
+                printf(lcd_putc, "basiniz...");
+                oyun_durumu = 1;
+            }
+        }
+
+        // Oyuncu 1 ve Oyuncu 2 Zar Atýþlarý
+        if (oyun_durumu == 1 && zar_sayisi < 3) {
+            lcd_putc("\f");
+            lcd_gotoxy(1, 1);
+            printf(lcd_putc, "P1 Zar Atisi...");
+            while (!input(PIN_A0));  // P1 basana kadar bekle
+            delay_ms(200);
+            oyuncu1_zarlar[zar_sayisi] = zar_atisi();
+            oyuncu1_toplam += oyuncu1_zarlar[zar_sayisi];
+
+            lcd_putc("\f");
+            lcd_gotoxy(1, 2);
+            printf(lcd_putc, "P2 Zar Atisi...");
+            while (!input(PIN_A0));  // P2 basana kadar bekle
+            delay_ms(200);
+            oyuncu2_zarlar[zar_sayisi] = zar_atisi();
+            oyuncu2_toplam += oyuncu2_zarlar[zar_sayisi];
+
+            guncelle_lcd();
+            delay_ms(1000);
+            zar_sayisi++;
+        }
+
+        // 3 zar atýþý sonrasý kazananý göster
+        if (zar_sayisi == 3) {
+            kazanan_mesaji();
+            oyun_durumu = 0;  // Oyunu sýfýrla
+            zar_sayisi = 0;
+            oyuncu1_toplam = 0;
+            oyuncu2_toplam = 0;
+        }
+    }
+}
+

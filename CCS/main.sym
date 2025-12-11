@@ -1,0 +1,154 @@
+004-005 @WRITE_PROGRAM_MEMORY8.P1
+004-005 @READ_PROGRAM_MEMORY8.P2
+006     lcd
+008     PSP_DATA
+015     CCP_1
+015     CCP_1_LOW
+016     CCP_1_HIGH
+01B     CCP_2
+01B     CCP_2_LOW
+01C     CCP_2_HIGH
+020     lcdline
+021-023 oyuncu1_zarlar
+024-026 oyuncu2_zarlar
+027     oyuncu1_toplam
+028     oyuncu2_toplam
+029     zar_sayisi
+02A     @TRIS_C
+02B     led_efekti.j
+02B     reset_oyun.j
+02B     hosgeldiniz_mesaji.pos
+02B     @PRINTF_D_649.P1
+02B     @PSTRINGCN7_649.P2
+02B     lcd_init.i
+02B     kazanan_mesaji.@SCRATCH1
+02B     MAIN.@SCRATCH1
+02C     @PRINTF_D_649.P1
+02C     lcd_init.@SCRATCH1
+02C     led_efekti.@SCRATCH1
+02C     @PSTRINGC7_649.@SCRATCH1
+02C     @PSTRINGCN7_649.@SCRATCH1
+02C     reset_oyun.@SCRATCH1
+02C     MAIN.@SCRATCH2
+02D     @WRITEBITA.P1
+02D     zar_atisi.timer_value
+02D     @PSTRINGC7_649.@SCRATCH2
+02D     @PSTRINGCN7_649.@SCRATCH2
+02D     @PRINTF_D_649.@SCRATCH1
+02D     reset_oyun.@SCRATCH2
+02E     @WRITEBITA.P1
+02E     zar_atisi.@SCRATCH1
+02E     @PSTRINGC7_649.@SCRATCH3
+02E     @PSTRINGCN7_649.@SCRATCH3
+02E     @PRINTF_D_649.@SCRATCH2
+02F-030 @WRITEBITA.P1
+02F     @PSTRINGC7_649.@SCRATCH4
+02F     @PSTRINGCN7_649.@SCRATCH4
+02F     @PRINTF_D_649.@SCRATCH3
+030     @PRINTF_D_649.@SCRATCH4
+031     @DIV88.P1
+031     lcd_putc.c
+032     lcd_gotoxy.x
+032     @delay_ms1.P1
+032     @DIV88.P2
+033     lcd_gotoxy.y
+033     @DIV88.@SCRATCH1
+034     lcd_gotoxy.address
+035     lcd_send_byte.address
+036     lcd_send_byte.n
+037     lcd_read_byte.low
+037     lcd_send_byte.@SCRATCH1
+038     lcd_read_byte.high
+038     lcd_send_nibble.n
+039     lcd_read_byte.@SCRATCH1
+077     @SCRATCH
+078     @SCRATCH
+078     _RETURN_
+079     @SCRATCH
+07A     @SCRATCH
+09C.6   C1OUT
+09C.7   C2OUT
+10D-10E @WRITE_PROGRAM_MEMORY8.P1
+10D-10E @READ_PROGRAM_MEMORY8.P2
+
+ROM Allocation:
+000004  LCD_INIT_STRING.call
+000008  LCD_INIT_STRING.data
+00000C  @const673.call
+00000D  @const675.call
+000014  @const677.call
+000015  @const678.call
+00001C  @const684.call
+000023  @const686.call
+000024  @const687.call
+00002C  @const688.call
+00002D  @const689.call
+000033  @const690.call
+000039  @const691.call
+00003E  @const698.call
+00003F  @const699.call
+000047  @const700.call
+00004F  @const701.call
+000050  @const702.call
+000058  @const703.call
+000059  @const704.call
+000061  @const705.call
+000062  @const706.call
+00006A  @const707.call
+00006B  @const708.call
+000071  @const709.call
+000078  @delay_ms1
+00008D  lcd_send_nibble
+000099  lcd_send_byte
+00009A  lcd_read_byte
+0000D3  lcd_init
+0000FF  lcd_gotoxy
+000119  @goto10605
+000121  lcd_putc
+000148  @PSTRINGC7_649
+000193  hosgeldiniz_mesaji
+0001B3  reset_oyun
+0001CA  @DIV88
+0001DF  zar_atisi
+0001EE  @PSTRINGCN7_649
+000242  @PRINTF_D_649
+000299  guncelle_lcd
+0002E8  @WRITEBITA
+000308  led_efekti
+000332  kazanan_mesaji
+000396  @cinit1
+000396  MAIN
+0003A2  @cinit2
+
+Project Directory:
+    C:\Users\user\Desktop\Mikrodenetleyiciler_Projesi-20241216T114909Z-001\Mikrodenetleyiciler_Projesi\Mikrodenetleyiciler_Projesi\CCS\
+
+Project Files:
+    main.c                                                  [17-Ara-24 00:01  CRC=716867A4]
+    ..\..\..\..\..\..\..\Program Files (x86)\PICC\Devices\16F877A.h [21-Haz-13 16:04  CRC=4E65664C]
+    ..\..\..\..\..\..\..\Program Files (x86)\PICC\Drivers\lcd420.c [14-Nis-09 10:58  CRC=C5A307B3]
+
+Source signature=4B13DD56
+
+Units:
+    main (main)
+
+Compiler Settings:
+    Processor:      PIC16F877A
+    Pointer Size:   16
+    ADC Range:      0-255
+    Opt Level:      9
+    Short,Int,Long: UNSIGNED: 1,8,16
+    Float,Double:   32,32
+
+Output Files:
+    XREF file:   main.xsym
+    Errors:      main.err
+    Ext Symbols: main.esym
+    INHX8:       main.hex
+    Symbols:     main.sym
+    List:        main.lst
+    Debug/COFF:  main.cof
+    Project:     main.ccspjt
+    Call Tree:   main.tre
+    Statistics:  main.STA

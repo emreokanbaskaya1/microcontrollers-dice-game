@@ -1,0 +1,230 @@
+#include <16F877A.h>
+#fuses XT, NOWDT, NOPROTECT, NOBROWNOUT, NOLVP, NOPUT, NOWRT, NODEBUG, NOCPD
+#use delay(clock=4M)
+#include <lcd.c>
+
+// Durumlarý belirleyen global deðiþkenler
+int oyun_durumu = 0;  // 0: Baþlangýç, 1: Oyuncu 1 Zar Atýþý, 2: Oyuncu 2 Zar Atýþý
+int oyuncu1_zarlar[3];  // Oyuncu 1 için zar deðerleri
+int oyuncu2_zarlar[3];  // Oyuncu 2 için zar deðerleri
+int oyuncu1_toplam = 0; // Oyuncu 1'in toplamý
+int oyuncu2_toplam = 0; // Oyuncu 2'nin toplamý
+int zar_sayisi = 0;     // Zar sayacý
+int i = 0;              // Global 'i' deðiþkeni
+
+// Timer0'ý kullanarak 1 ile 6 arasýnda rastgele zar sayýsý üretmek için fonksiyon
+int zar_atisi() {
+    int timer_value = get_timer0();  // Timer0'ýn o anki deðerini al
+    set_timer0(0);  // Timer0'ý sýfýrla
+    return (timer_value % 6) + 1;  // 1 ile 6 arasýnda rastgele sayý üret
+}
+
+// LED efekt fonksiyonu (sýrayla LED'leri hýzlý yakýp söndürme)
+void led_efekti() {
+    for (int j = 0; j < 8; j++) {
+        delay_ms(20);
+        output_high(PIN_B0 + j);  // RB0'dan RB7'ye sýrayla LED'leri yak
+        delay_ms(20);             // LED yanma süresini daha hýzlý yapmak için azaltýldý
+        output_low(PIN_B0 + j);    // LED'i kapat
+    }
+}
+
+// Kazanan için LED efekti (kazanma efekti)
+void kazanan_led_efekti() {
+    for (int k = 0; k < 3; k++) {  // Efekti 3 kez tekrarla
+        output_high(PIN_B0);  // Tüm LED'leri ayný anda yak
+        output_high(PIN_B1);
+        output_high(PIN_B2);
+        output_high(PIN_B3);
+        output_high(PIN_B4);
+        output_high(PIN_B5);
+        output_high(PIN_B6);
+        output_high(PIN_B7);
+        delay_ms(200);  // Yanýk kalma süresi
+        output_low(PIN_B0);
+        output_low(PIN_B1);
+        output_low(PIN_B2);
+        output_low(PIN_B3);
+        output_low(PIN_B4);
+        output_low(PIN_B5);
+        output_low(PIN_B6);
+        output_low(PIN_B7);
+        delay_ms(200);  // Sönük kalma süresi
+    }
+}
+
+void tum_ledleri_yak() {
+    output_high(PIN_B0);
+    output_high(PIN_B1);
+    output_high(PIN_B2);
+    output_high(PIN_B3);
+    output_high(PIN_B4);
+    output_high(PIN_B5);
+    output_high(PIN_B6);
+    output_high(PIN_B7);
+}
+
+void tum_ledleri_sondur() {
+    output_low(PIN_B0);
+    output_low(PIN_B1);
+    output_low(PIN_B2);
+    output_low(PIN_B3);
+    output_low(PIN_B4);
+    output_low(PIN_B5);
+    output_low(PIN_B6);
+    output_low(PIN_B7);
+}
+
+void baslama_mesaji() {
+    lcd_putc("\f");
+    lcd_gotoxy(1, 1);
+    printf(lcd_putc, "Oyuna baslamak");
+    lcd_gotoxy(1, 2);
+    printf(lcd_putc, "icin START'a basin");
+}
+
+void hosgeldiniz_mesaji() {
+    for (i = 1; i <= 17; i++) {
+        lcd_putc("\f");
+        lcd_gotoxy(i, 1);
+        printf(lcd_putc, "Hosgeldiniz!");
+        delay_ms(30);
+    }
+}
+
+// Her atýþ sonrasý sonucu LCD'de gösteren fonksiyon
+void guncelle_lcd() {
+    lcd_putc("\f");
+    lcd_gotoxy(1, 1);
+    printf(lcd_putc, "Zar-1 --> ");
+    for (i = 0; i <= zar_sayisi; i++) {
+        if (oyuncu1_zarlar[i] != 0) {
+            printf(lcd_putc, "%d", oyuncu1_zarlar[i]);
+            if (i < zar_sayisi) printf(lcd_putc, "+");
+        }
+    }
+    lcd_gotoxy(1, 2);
+    printf(lcd_putc, "Zar-2 --> ");
+    for (i = 0; i <= zar_sayisi; i++) {
+        if (oyuncu2_zarlar[i] != 0) {
+            printf(lcd_putc, "%d", oyuncu2_zarlar[i]);
+            if (i < zar_sayisi) printf(lcd_putc, "+");
+        }
+    }
+}
+
+// Sonuçlarý hesaplayýp kazananý gösteren fonksiyon
+void kazanan_mesaji() {
+    lcd_putc("\f");
+    lcd_gotoxy(1, 1);
+    printf(lcd_putc, "Zar-1: %d", oyuncu1_toplam);
+    lcd_gotoxy(1, 2);
+    printf(lcd_putc, "Zar-2: %d", oyuncu2_toplam);
+    delay_ms(700);  // Zar toplamýný gösterme süresi azaltýldý
+
+    lcd_putc("\f");
+    lcd_gotoxy(1, 1);
+    if (oyuncu1_toplam > oyuncu2_toplam) {
+        printf(lcd_putc, "Zar-1 kazandi!");
+        lcd_gotoxy(1, 2);  
+        printf(lcd_putc, "Tebrikler!");  // Kazanan Zar için "Tebrikler!" yazýsý
+    } else if (oyuncu2_toplam > oyuncu1_toplam) {
+        printf(lcd_putc, "Zar-2 kazandi!");
+        lcd_gotoxy(1, 2);
+        printf(lcd_putc, "Tebrikler!");  // Kazanan Zar için "Tebrikler!" yazýsý
+    } else {
+        printf(lcd_putc, "Berabere!");
+        lcd_gotoxy(1, 2);
+        printf(lcd_putc, "Dostluk Kazandi!");  // Beraberlik durumunda "Dostluk Kazandý!" yazýsý
+    }
+
+    kazanan_led_efekti();  // Kazanan için LED efekti
+}
+
+// Butona basýlana kadar bekle
+void buton_bekle(int pin) {
+    while(input(pin) == 0);  // Butonun basýlmasýný bekle
+    delay_ms(200);
+}
+
+void main() {
+    lcd_init();
+    set_tris_a(0x01);  // RA0 giriþ olarak ayarlandý (00000001)
+    set_tris_c(0x03);  // RC0 ve RC1 giriþ olarak ayarlandý (00000011)
+    set_tris_b(0x00);  // RB0-RB7 LED çýkýþ olarak ayarlandý
+    setup_timer_0(RTCC_INTERNAL | RTCC_DIV_256);
+
+    lcd_putc("\f");
+    lcd_gotoxy(1, 1);
+    printf(lcd_putc, "Lutfen Oyunu");
+    lcd_gotoxy(1, 2);
+    printf(lcd_putc, "Calistir'a basin");
+
+    tum_ledleri_sondur(); // Baþlangýçta tüm LED'leri kapat
+
+    while(TRUE) {
+        if (input(PIN_C1) == 1) {
+            oyun_durumu = 0;
+            zar_sayisi = 0;
+            oyuncu1_toplam = 0;
+            oyuncu2_toplam = 0;
+            for (i = 0; i < 3; i++) {
+                oyuncu1_zarlar[i] = 0;
+                oyuncu2_zarlar[i] = 0;
+            }
+            lcd_putc("\f");
+            lcd_gotoxy(1, 1);
+            printf(lcd_putc, "Lutfen Oyunu");
+            lcd_gotoxy(1, 2);
+            printf(lcd_putc, "Calistir'a basin");
+            tum_ledleri_sondur(); // Reset'te LED'leri kapat
+            continue;
+        }
+
+        if (oyun_durumu == 0 && input(PIN_C0)) {
+            buton_bekle(PIN_C0);
+            hosgeldiniz_mesaji();
+            delay_ms(300);
+            baslama_mesaji();
+            tum_ledleri_yak();  // Çalýþtýr butonuna basýldýðýnda tüm LED'ler yanacak
+            delay_ms(500);      // Biraz bekleyip
+            tum_ledleri_sondur(); // Tüm LED'leri kapat
+            oyun_durumu = 1;
+        }
+
+        if (oyun_durumu == 1 && input(PIN_A0)) {
+            buton_bekle(PIN_A0);
+            oyuncu1_zarlar[zar_sayisi] = zar_atisi();
+            oyuncu1_toplam += oyuncu1_zarlar[zar_sayisi];
+            guncelle_lcd();
+            led_efekti();  // Zar atýþý sýrasýnda LED efekti
+            oyun_durumu = 2;
+        }
+
+        if (oyun_durumu == 2 && input(PIN_A0)) {
+            buton_bekle(PIN_A0);
+            oyuncu2_zarlar[zar_sayisi] = zar_atisi();
+            oyuncu2_toplam += oyuncu2_zarlar[zar_sayisi];
+            guncelle_lcd();
+            led_efekti();  // Zar atýþý sýrasýnda LED efekti
+            zar_sayisi++;
+
+            if (zar_sayisi < 3) {
+                oyun_durumu = 1;
+            } else {
+                delay_ms(700);
+                kazanan_mesaji();
+                oyun_durumu = 3;
+                while(TRUE) {
+                    if (input(PIN_C1) == 1) {  // RESET butonuna basýlana kadar bekle
+                        oyun_durumu = 0;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+
